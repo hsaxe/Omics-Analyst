@@ -1,4 +1,3 @@
-
 #' Takes an OmicsAnalyst formatted data.frame, replaces any missing value(s) with zeros, and removes variables (rows) with constant values.
 #' @param x a data.frame
 #' @export
