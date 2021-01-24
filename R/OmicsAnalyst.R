@@ -1,44 +1,30 @@
-#' Takes an OmicsAnalyst formatted data.frame, replaces any missing value(s) with zeros, and removes variables (rows) with constant values.
+#' Takes an OmicsAnalyst formatted data.frame, replaces any missing value(s) with zeros, and removes varbiables(rows) with IQR below a certain threshold
 #' @param x a data.frame
+#' @param Filter logical argument. If TRUE (T), data will be IQR filtered by the specified threshold. If FALSE (F), data will not be filtered
+#' @param Threshold a value indicating the minimum IQR to be included in the output. Varibles having IQR below this will be excluded from the output
 #' @export
-pre_process <- function(x){
+clean_data <- function(x, Filter = T, Threshold = 0.5){
 
   ifelse(any(is.na(x)), print(paste(sum(is.na(x)), "missing value(s) replaced with zeros")), print("Data has no missing values"))
 
   if(any(is.na(x))){x[is.na(x)] <- 0}
 
-  rawT <- data.table::transpose(x, make.names = 1)
+  if(Filter %in% T){
+    x$iqrs = c("NA", matrixStats::rowIQRs(as.matrix(sapply(x[-1,-1], as.numeric))))
 
-  rem_con <- janitor::remove_constant(rawT, quiet = T)
+    filtered <- x[x$iqrs >= Threshold,]
 
-  rem_con$Sample <- as.character(colnames(x)[2:length(colnames(x))])
+    if(min(x$iqrs) >= Threshold) {print(paste("No features with IQR below", Threshold))}
 
-  t <- data.table::transpose(rem_con, keep.names = "Gene.ID")
+    filtered[1,1] <- x[1,1]
 
-  colnames(t) = colnames(x)
+    final <- filtered[,-ncol(filtered)]
 
-  print(paste(nrow(x)-nrow(t), "features with constant values removed"))
+    print(paste("Removed", (nrow(x)-1) - (nrow(final)-1), "features with IQR below", Threshold))
 
-  return(t)
-}
+    return(final)
+  }
 
-#' Takes an OmicsAnalyst formatted data.frame and removes varbiables(rows) with IQR below a certain threshold
-#' @param x a data.frame
-#' @param Threshold a value indicating the minimum IQR to be included in the output. Varibles having IQR below this will be excluded from the output
-#' @export
-iqr_filter <- function(x, Threshold = 0.5){
-
-  x$iqrs = c("NA", matrixStats::rowIQRs(as.matrix(sapply(x[-1,-1], as.numeric))))
-
-  filtered <- x[x$iqrs >= Threshold,]
-
-  filtered[1,1] <- x[1,1]
-
-  final <- filtered[,-ncol(filtered)]
-
-  print(paste("Removed", ((nrow(x)-1) - nrow(filtered)-1), "features with IQR below", Threshold))
-
-  return(final)
 }
 
 #' Takes an OmicsAnalyst formatted data.frame and converts it to long format for plotting descriptive statistics and individual features
