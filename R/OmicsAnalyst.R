@@ -34,6 +34,8 @@ iqr_filter <- function(x, Threshold = 0.5){
 
   filtered[1,1] <- x[1,1]
 
+  final <- filtered[,-ncol(filtered)]
+
   print(paste("Removed", ((nrow(x)-1) - nrow(filtered)-1), "features with IQR below", Threshold))
 
   return(filtered)
