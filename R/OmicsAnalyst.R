@@ -38,7 +38,7 @@ iqr_filter <- function(x, Threshold = 0.5){
 
   print(paste("Removed", ((nrow(x)-1) - nrow(filtered)-1), "features with IQR below", Threshold))
 
-  return(filtered)
+  return(final)
 }
 
 #' Takes an OmicsAnalyst formatted data.frame and converts it to long format for plotting descriptive statistics and individual features
