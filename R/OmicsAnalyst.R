@@ -1,10 +1,11 @@
-#' Takes an OmicsAnalyst formatted data.frame, replaces any missing value(s) with zeros, calculates the interquartile ranges (IQRs) for all variables and sorts them by IQR. Only top varbiables(rows) in this rank will be retained in the output. The default is to retain the 5000 highest IQR variables to conserve computing resources
+#' Takes an OmicsAnalyst formatted data.frame, replaces any missing value(s) with zeros, calculates the interquartile ranges (IQRs) for all variables, sorts them by IQR, and filters the data by either IQR.Rank or IQR.
 #' @param x a data.frame
-#' @param Filter logical argument. If TRUE (T), data will be IQR filtered by the specified threshold. If FALSE (F), data will not be filtered
-#' @param Threshold a value indicating the maximum amount of IQR ranked variables to be included in the output.
+#' @param Filter If "IQR.Rank", data will be IQR filtered by the specified Rank.threshold (default 5000). If IQR, data will be IQR filtered by the specified iqr.threshold (defaut 0.5).
+#' @param Rank.Threshold a value indicating the maximum amount of IQR ranked variables to be included in the output.
+#' @param iqr.threshold a value indicating the minimum IQR variables to be included in the output.
 #' @import DescTools
 #' @export
-clean_data <- function(x, Filter = T, Threshold = 5000){
+clean_data <- function(x, Filter = "", Rank.Threshold = 5000, iqr.threshold = 0.5){
   iqrs <- NULL
   a <- x[-1,]
 
@@ -12,18 +13,32 @@ clean_data <- function(x, Filter = T, Threshold = 5000){
 
   if(any(is.na(a))){a[is.na(a)] <- 0}
 
-  if(Filter %in% T){
+  if(Filter %in% "IQR.Rank"){
     a$iqrs = as.numeric(matrixStats::rowIQRs(as.matrix(sapply(a[,-1], as.numeric))))
 
-    filtered <- dplyr::arrange(a[-1,], desc(iqrs))[1:Threshold,]
+    filtered <- dplyr::arrange(a[-1,], desc(iqrs))[1:Rank.Threshold,]
 
-    if(nrow(a) <= Threshold) {print(paste("No features removed. Data only has", nrow(x), "features"))}
+    if(nrow(a) <= Rank.Threshold) {print(paste("No features removed. Data only has", nrow(x), "features"))}
 
     filtered[1,] <- x[1,]
 
     final <- filtered[,-ncol(filtered)]
 
-    print(paste("Removed", (nrow(x)-1) - (nrow(final)-1), "features based on specified threshold"))
+    print(paste("Removed", (nrow(x)-1) - (nrow(final)-1), "features based on IQR rank threshold"))
+
+    return(final)
+  }
+
+  if(Filter %in% "IQR"){
+    a$iqrs = as.numeric(matrixStats::rowIQRs(as.matrix(sapply(a[,-1], as.numeric))))
+
+    filtered <- a[a$iqrs >= iqr.threshold,]
+
+    filtered[1,] <- x[1,]
+
+    final <- filtered[,-ncol(filtered)]
+
+    print(paste("Removed", (nrow(x)-1) - (nrow(final)-1), "features based on IQR threshold"))
 
     return(final)
   }

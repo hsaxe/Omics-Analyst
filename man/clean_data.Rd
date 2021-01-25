@@ -2,17 +2,19 @@
 % Please edit documentation in R/OmicsAnalyst.R
 \name{clean_data}
 \alias{clean_data}
-\title{Takes an OmicsAnalyst formatted data.frame, replaces any missing value(s) with zeros, calculates the interquartile ranges (IQRs) for all variables and sorts them by IQR. Only top varbiables(rows) in this rank will be retained in the output. The default is to retain the 5000 highest IQR variables to conserve computing resources}
+\title{Takes an OmicsAnalyst formatted data.frame, replaces any missing value(s) with zeros, calculates the interquartile ranges (IQRs) for all variables, sorts them by IQR, and filters the data by either IQR.Rank or IQR.}
 \usage{
-clean_data(x, Filter = T, Threshold = 5000)
+clean_data(x, Filter = "", Rank.Threshold = 5000, iqr.threshold = 0.5)
 }
 \arguments{
 \item{x}{a data.frame}
 
-\item{Filter}{logical argument. If TRUE (T), data will be IQR filtered by the specified threshold. If FALSE (F), data will not be filtered}
+\item{Filter}{If "IQR.Rank", data will be IQR filtered by the specified Rank.threshold (default 5000). If IQR, data will be IQR filtered by the specified iqr.threshold (defaut 0.5).}
 
-\item{Threshold}{a value indicating the maximum amount of IQR ranked variables to be included in the output.}
+\item{Rank.Threshold}{a value indicating the maximum amount of IQR ranked variables to be included in the output.}
+
+\item{iqr.threshold}{a value indicating the minimum IQR variables to be included in the output.}
 }
 \description{
-Takes an OmicsAnalyst formatted data.frame, replaces any missing value(s) with zeros, calculates the interquartile ranges (IQRs) for all variables and sorts them by IQR. Only top varbiables(rows) in this rank will be retained in the output. The default is to retain the 5000 highest IQR variables to conserve computing resources
+Takes an OmicsAnalyst formatted data.frame, replaces any missing value(s) with zeros, calculates the interquartile ranges (IQRs) for all variables, sorts them by IQR, and filters the data by either IQR.Rank or IQR.
 }
