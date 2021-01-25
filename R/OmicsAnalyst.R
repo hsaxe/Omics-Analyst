@@ -135,3 +135,5 @@ PCA_Omics <- function(x, legend.hjust = 0.84){
 
   print(g)
 }
+
+
