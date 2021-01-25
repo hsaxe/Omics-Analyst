@@ -21,4 +21,7 @@ Imports:
 	reshape2,
 	ggplot2,
 	BBmisc,
-	FitAR
+	FitAR,
+	stats,
+	grDevices,
+	viridis
