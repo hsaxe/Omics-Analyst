@@ -63,3 +63,69 @@ group_stats <- function(x, group = "", variable = "", fun, name = ""){
 
   return(m)
 }
+
+#' Takes an OmicsAnalyst formatted data.frame and performs general logarithm transformation (glog) and/or stdandardization (autoscale) returning a normalized data.frame
+#' @param x a data.frame
+#' @param glog logical argument. If TRUE (T), data will be glog normalized. If FALSE (F), data will not be glog normalized
+#' @param autoscale logical argument. If TRUE (T), data will be autoscaled. If FALSE (F), data will not be autoscaled
+#' @export
+norm_Omics_df <- function(x, glog = T, autoscale = T){
+
+  rawT <- data.table::transpose(x, keep.names = , make.names = 1)
+
+  rawT[, c(2:ncol(rawT))] <- sapply(rawT[, c(2:ncol(rawT))], FUN = as.numeric)
+
+  if(glog %in% T){
+    rawT[, c(2:ncol(rawT))] <- sapply(rawT[, c(2:ncol(rawT))], FUN = FitAR::glog)
+  }
+
+  if(autoscale %in% T){
+    rawT[, c(2:ncol(rawT))] <- sapply(rawT[, c(2:ncol(rawT))], FUN = BBmisc::normalize, method = "standardize")
+  }
+
+  rawT[, c(2:ncol(rawT))] <- sapply(rawT[, c(2:ncol(rawT))], FUN = format, digits = 3, width = 3)
+
+  raw <- data.table::transpose(rawT, keep.names = "Gene.ID")
+
+  colnames(raw) = colnames(x)
+
+  return(raw)
+
+}
+
+#' Takes an OmicsAnalyst formatted data.frame and returns a data.fram prepared for PCA analysis
+#' @param x a data.frame
+#' @param legend.hjust adjusts horizontal justification of PCA plot legend
+PCA_Omics <- function(x, legend.hjust = 0.84){
+  forPCA <- data.table::transpose(x, keep.names = , make.names = 1)
+
+  forPCA[2:ncol(forPCA)] <- sapply(forPCA[2:ncol(forPCA)], as.numeric)
+
+  rownames(forPCA) <- colnames(x)[-1]
+
+  PCA <- prcomp(forPCA[2:ncol(forPCA)], center = F, scale. = F)
+
+  pca <- as.data.frame(PCA$x)
+
+  proportion <- round((PCA$sdev^2)/ sum(PCA$sdev^2) * 100, 2)
+
+  label <- paste(colnames(pca)[1:13], "(", as.character(proportion), "%)", sep = "")
+
+  pca$Group = as.factor(gsub("\\.\\d$", "", rownames(pca)))
+
+  print(summary(PCA))
+
+  tiff("PCA.tiff", 8.5, 8.5, units = "cm", compression = "lzw", res = 800)
+  g <- ggplot2::ggplot(pca, aes(x = PC1, y = PC2, fill = Group))+
+    scale_fill_viridis(begin = 0.2, discrete = T)+
+    scale_color_viridis(begin = 0.2, discrete = T)+
+    geom_point(aes(fill = Group), size = 1, shape = 21, colour = "black")+
+    stat_ellipse(geom = "polygon", alpha = 0.25, level = 0.95)+
+    theme_bw()+
+    theme(text = element_text(size = 7), legend.title = element_blank(), legend.text = element_text(size = 6), legend.key.size = unit(0.4,"cm"), legend.position = c(legend.hjust, 0.9), legend.background = element_rect(linetype = "solid", colour = "black", size = 0.3), legend.margin = margin(r=1, l=1,t=-2,b=1))+
+    labs(x = label[1], y = label[2])
+  print(g)
+  dev.off()
+
+  print(g)
+}
