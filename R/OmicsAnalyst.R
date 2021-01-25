@@ -102,6 +102,7 @@ norm_Omics_df <- function(x, glog = T, autoscale = T){
 #' @import ggplot2
 #' @import grDevices
 #' @import viridis
+#' @export
 PCA_Omics <- function(x, x.axis = PC1, y.axis = PC2, legend.hjust = 0.84){
   Group <- PC1 <- PC2 <- NULL
   forPCA <- data.table::transpose(x, keep.names = , make.names = 1)
