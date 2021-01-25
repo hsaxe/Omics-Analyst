@@ -4,14 +4,10 @@
 \alias{PCA_Omics}
 \title{Takes an OmicsAnalyst formatted data.frame and returns a data.fram prepared for PCA analysis}
 \usage{
-PCA_Omics(x, x.axis = PC1, y.axis = PC2, legend.hjust = 0.84)
+PCA_Omics(x, legend.hjust = 0.84)
 }
 \arguments{
 \item{x}{a data.frame}
-
-\item{x.axis}{Principal component (PC) to plot on x axis}
-
-\item{y.axis}{PC to plot on x axis}
 
 \item{legend.hjust}{adjusts horizontal justification of PCA plot legend}
 }

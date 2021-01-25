@@ -95,15 +95,13 @@ norm_Omics_df <- function(x, glog = T, autoscale = T){
 
 #' Takes an OmicsAnalyst formatted data.frame and returns a data.fram prepared for PCA analysis
 #' @param x a data.frame
-#' @param x.axis Principal component (PC) to plot on x axis
-#' @param y.axis PC to plot on x axis
 #' @param legend.hjust adjusts horizontal justification of PCA plot legend
 #' @import stats
 #' @import ggplot2
 #' @import grDevices
 #' @import viridis
 #' @export
-PCA_Omics <- function(x, x.axis = PC1, y.axis = PC2, legend.hjust = 0.84){
+PCA_Omics <- function(x, legend.hjust = 0.84){
   Group <- PC1 <- PC2 <- NULL
   forPCA <- data.table::transpose(x, keep.names = , make.names = 1)
 
@@ -124,7 +122,7 @@ PCA_Omics <- function(x, x.axis = PC1, y.axis = PC2, legend.hjust = 0.84){
   print(summary(PCA))
 
   tiff("PCA.tiff", 8.5, 8.5, units = "cm", compression = "lzw", res = 800)
-  g <- ggplot2::ggplot(pca, aes(x = x.axis, y = y.axis, fill = Group))+
+  g <- ggplot2::ggplot(pca, aes(x = PC1, y = PC2, fill = Group))+
     scale_fill_viridis(begin = 0.2, discrete = T)+
     scale_color_viridis(begin = 0.2, discrete = T)+
     geom_point(aes(fill = Group), size = 1, shape = 21, colour = "black")+
