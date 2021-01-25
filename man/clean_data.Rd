@@ -2,17 +2,17 @@
 % Please edit documentation in R/OmicsAnalyst.R
 \name{clean_data}
 \alias{clean_data}
-\title{Takes an OmicsAnalyst formatted data.frame, replaces any missing value(s) with zeros, and removes varbiables(rows) with IQR below a certain threshold}
+\title{Takes an OmicsAnalyst formatted data.frame, replaces any missing value(s) with zeros, calculates the interquartile ranges (IQRs) for all variables and sorts them by IQR. Only top varbiables(rows) in this rank will be retained in the output. The default is to retain the 5000 highest IQR variables to conserve computing resources}
 \usage{
-clean_data(x, Filter = T, Threshold = 0.5)
+clean_data(x, Filter = T, Threshold = 5000)
 }
 \arguments{
 \item{x}{a data.frame}
 
 \item{Filter}{logical argument. If TRUE (T), data will be IQR filtered by the specified threshold. If FALSE (F), data will not be filtered}
 
-\item{Threshold}{a value indicating the minimum IQR to be included in the output. Varibles having IQR below this will be excluded from the output}
+\item{Threshold}{a value indicating the maximum amount of IQR ranked variables to be included in the output.}
 }
 \description{
-Takes an OmicsAnalyst formatted data.frame, replaces any missing value(s) with zeros, and removes varbiables(rows) with IQR below a certain threshold
+Takes an OmicsAnalyst formatted data.frame, replaces any missing value(s) with zeros, calculates the interquartile ranges (IQRs) for all variables and sorts them by IQR. Only top varbiables(rows) in this rank will be retained in the output. The default is to retain the 5000 highest IQR variables to conserve computing resources
 }

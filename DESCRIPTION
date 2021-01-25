@@ -24,4 +24,6 @@ Imports:
 	FitAR,
 	stats,
 	grDevices,
-	viridis
+	viridis,
+	dplyr,
+	DescTools

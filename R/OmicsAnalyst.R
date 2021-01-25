@@ -1,26 +1,29 @@
-#' Takes an OmicsAnalyst formatted data.frame, replaces any missing value(s) with zeros, and removes varbiables(rows) with IQR below a certain threshold
+#' Takes an OmicsAnalyst formatted data.frame, replaces any missing value(s) with zeros, calculates the interquartile ranges (IQRs) for all variables and sorts them by IQR. Only top varbiables(rows) in this rank will be retained in the output. The default is to retain the 5000 highest IQR variables to conserve computing resources
 #' @param x a data.frame
 #' @param Filter logical argument. If TRUE (T), data will be IQR filtered by the specified threshold. If FALSE (F), data will not be filtered
-#' @param Threshold a value indicating the minimum IQR to be included in the output. Varibles having IQR below this will be excluded from the output
+#' @param Threshold a value indicating the maximum amount of IQR ranked variables to be included in the output.
+#' @import DescTools
 #' @export
-clean_data <- function(x, Filter = T, Threshold = 0.5){
+clean_data <- function(x, Filter = T, Threshold = 5000){
+  iqrs <- NULL
+  a <- x[-1,]
 
-  ifelse(any(is.na(x)), print(paste(sum(is.na(x)), "missing value(s) replaced with zeros")), print("Data has no missing values"))
+  ifelse(any(is.na(a)), print(paste(sum(is.na(a)), "missing value(s) replaced with zeros")), print("Data has no missing values"))
 
-  if(any(is.na(x))){x[is.na(x)] <- 0}
+  if(any(is.na(a))){a[is.na(a)] <- 0}
 
   if(Filter %in% T){
-    x$iqrs = c("NA", matrixStats::rowIQRs(as.matrix(sapply(x[-1,-1], as.numeric))))
+    a$iqrs = as.numeric(matrixStats::rowIQRs(as.matrix(sapply(a[,-1], as.numeric))))
 
-    filtered <- x[x$iqrs >= Threshold,]
+    filtered <- dplyr::arrange(a[-1,], desc(iqrs))[1:Threshold,]
 
-    if(min(x$iqrs) >= Threshold) {print(paste("No features with IQR below", Threshold))}
+    if(nrow(a) <= Threshold) {print(paste("No features removed. Data only has", nrow(x), "features"))}
 
-    filtered[1,1] <- x[1,1]
+    filtered[1,] <- x[1,]
 
     final <- filtered[,-ncol(filtered)]
 
-    print(paste("Removed", (nrow(x)-1) - (nrow(final)-1), "features with IQR below", Threshold))
+    print(paste("Removed", (nrow(x)-1) - (nrow(final)-1), "features based on specified threshold"))
 
     return(final)
   }
