@@ -5,42 +5,60 @@
 #' @param iqr.threshold a value indicating the minimum IQR variables to be included in the output.
 #' @import DescTools
 #' @export
-clean_data <- function(x, Filter = "", Rank.Threshold = 5000, iqr.threshold = 0.5){
+clean_data <- function(x, CPMfilter = T, CPMfilterFUN = mean, CPMfilter.Threshold = 20, IQRfilter = "", Rank.Threshold = 5000, iqr.threshold = 0.5){
   iqrs <- NULL
-  a <- x[-1,]
+  a <- as.data.frame(x)
 
   ifelse(any(is.na(a)), print(paste(sum(is.na(a)), "missing value(s) replaced with zeros")), print("Data has no missing values"))
 
   if(any(is.na(a))){a[is.na(a)] <- 0}
 
-  if(Filter %in% "IQR.Rank"){
-    a$iqrs = as.numeric(matrixStats::rowIQRs(as.matrix(sapply(a[,-1], as.numeric))))
+  CPMfilterFUN = enquo(CPMfilterFUN)
 
-    filtered <- dplyr::arrange(a[-1,], desc(iqrs))[1:Rank.Threshold,]
+  if(CPMfilter == T){
+    final = a %>%
+      edgeR::cpm() %>%
+      as.data.frame() %>%
+      mutate(!!CPMfilterFUN := apply(., 1, !!CPMfilterFUN)) %>%
+      arrange(desc(!!CPMfilterFUN)) %>%
+      filter(!!CPMfilterFUN >= CPMfilter.Threshold)
 
     if(nrow(a) <= Rank.Threshold) {print(paste("No features removed. Data only has", nrow(x), "features"))}
 
-    filtered[1,] <- x[1,]
-
-    final <- filtered[,-ncol(filtered)]
-
-    print(paste("Removed", (nrow(x)-1) - (nrow(final)-1), "features based on IQR rank threshold"))
+    print(paste("Removed", (nrow(x)) - (nrow(final)), "features based on CPMfilter.Threshold threshold"))
 
     return(final)
+
   }
 
-  if(Filter %in% "IQR"){
-    a$iqrs = as.numeric(matrixStats::rowIQRs(as.matrix(sapply(a[,-1], as.numeric))))
+  if(IQRfilter %in% "IQR.Rank"){
 
-    filtered <- a[a$iqrs >= iqr.threshold,]
+    final = a %>%
+      mutate(iqrs = apply(., 1, IQR)) %>%
+      arrange(desc(iqrs)) %>%
+      head(n = Rank.Threshold)
 
-    filtered[1,] <- x[1,]
+    if(nrow(a) <= Rank.Threshold) {print(paste("No features removed. Data only has", nrow(x), "features"))}
 
-    final <- filtered[,-ncol(filtered)]
+    print(paste("Removed", (nrow(x)) - (nrow(final)), "features based on IQR rank threshold"))
+
+    Cleaned = list(dat = select(final, !iqrs), IQRs = final %>% select(iqrs))
+
+    return(Cleaned)
+
+  }
+
+  if(IQRfilter %in% "IQR"){
+
+    final = a %>%
+      mutate(iqrs = apply(., 1, IQR)) %>%
+      filter(iqrs >= iqr.threshold)
 
     print(paste("Removed", (nrow(x)-1) - (nrow(final)-1), "features based on IQR threshold"))
 
-    return(final)
+    Cleaned = list(dat = select(final, !iqrs), IQRs = final %>% select(iqrs))
+
+    return(Cleaned)
   }
 
 }
@@ -61,26 +79,6 @@ format_to_plot <- function(x){
 
 }
 
-
-#' Takes a plotting data.frame (typically long format) and returns the data.frame/data.table with a new column grouped by "group", transformed by "fun", and named by "name" arguments.
-#' @param x a data.frame
-#' @param group column name of groups to group by
-#' @param variable column name of variable that will be grouped by "groups"
-#' @param fun function to apply to grouped variable
-#' @param name desired name for new grouped variable produced by "fun"
-#' @export
-group_stats <- function(x, group = "", variable = "", fun, name = ""){
-
-  d <- data.table::data.table(x)
-
-  a <- d[, fun(get(variable)), by = group]
-
-  colnames(a)[ncol(a)] <- name
-
-  m <- merge(d, a, by = group)
-
-  return(m)
-}
 
 #' Takes an OmicsAnalyst formatted data.frame and performs general logarithm transformation (glog) and/or stdandardization (autoscale) returning a normalized data.frame
 #' @param x a data.frame
@@ -111,7 +109,7 @@ norm_Omics_df <- function(x, glog = T, autoscale = T){
 
 }
 
-#' Takes an OmicsAnalyst formatted data.frame and returns a data.fram prepared for PCA analysis
+#' Takes an OmicsAnalyst formatted data.frame and returns a data.frame prepared for PCA analysis
 #' @param x a data.frame
 #' @param legend.hjust adjusts horizontal justification of PCA plot legend
 #' @import stats
