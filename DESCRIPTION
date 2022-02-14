@@ -1,6 +1,6 @@
 Package: OmicsAnalyst
 Title: What the Package Does (One Line, Title Case)
-Version: 0.0.0.9000
+Version: 0.0.0.9001
 Authors@R: 
     person(given = "Houston",
            family = "Saxe",
@@ -12,18 +12,20 @@ License: GPL-3
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.1.1
+RoxygenNote: 7.1.2
 Imports:
-	tidyr,
-	data.table,
-	janitor,
-	matrixStats,
-	reshape2,
-	ggplot2,
-	BBmisc,
-	FitAR,
-	stats,
-	grDevices,
-	viridis,
-	dplyr,
-	DescTools
+    tidyr,
+    data.table,
+    janitor,
+    matrixStats,
+    ggplot2,
+    BBmisc,
+    FitAR,
+    stats,
+    dplyr,
+    DescTools,
+    edgeR,
+    tibble,
+    ggpubr,
+    utils,
+    rlang

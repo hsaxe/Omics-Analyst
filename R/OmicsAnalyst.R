@@ -1,155 +1,213 @@
-#' Takes an OmicsAnalyst formatted data.frame, replaces any missing value(s) with zeros, calculates the interquartile ranges (IQRs) for all variables, sorts them by IQR, and filters the data by either IQR.Rank or IQR.
-#' @param x a data.frame
-#' @param Filter If "IQR.Rank", data will be IQR filtered by the specified Rank.threshold (default 5000). If IQR, data will be IQR filtered by the specified iqr.threshold (defaut 0.5).
-#' @param Rank.Threshold a value indicating the maximum amount of IQR ranked variables to be included in the output.
-#' @param iqr.threshold a value indicating the minimum IQR variables to be included in the output.
-#' @import DescTools
+#' Takes a data.frame, replaces any missing value(s) with zeros, optionally performs counts per million (CPM) normalization, calculates the row-wise statistic provided by FilterFun, and filters the data with above the FilterThreshold or keeps only the top n provided by RankThreshold. The raw data is returned (not CPM normalized).
+#' @param dat A data.frame
+#' @param CPM Logical. Whether or not to normalize columns by CPM
+#' @param FilterFUN Row-wise function to use for filtering (mean, max, median, IQR, etc..).
+#' @param FilterThreshold Threshold value. Features with FilterFUN output higher than this value will be kept.
+#' @param RankThreshold Threshold value. Features will be ranked with FilterFUN and the top n values provided by RankThreshold will be kept.
+#' @import dplyr
+#' @importFrom dplyr filter
+#' @importFrom rlang :=
+#' @importFrom stats prcomp reorder
+#' @importFrom utils head
 #' @export
-clean_data <- function(x, CPMfilter = T, CPMfilterFUN = mean, CPMfilter.Threshold = 20, IQRfilter = "", Rank.Threshold = 5000, iqr.threshold = 0.5){
-  iqrs <- NULL
-  a <- as.data.frame(x)
+expression_filter <- function(dat, CPM = TRUE, FilterFUN = mean, FilterThreshold = NULL, RankThreshold = NULL){
 
-  ifelse(any(is.na(a)), print(paste(sum(is.na(a)), "missing value(s) replaced with zeros")), print("Data has no missing values"))
+  message('Make sure no numeric identifiers are in data as this will negatively impact filtering')
+
+  iqrs <- . <- ID <- Group <- NULL
+
+  a <- as.data.frame(dat)
+
+  if(any(sapply(a, is.character)) == T) {
+    stop('Characters detected in at least one column. Only numeric values allowed. The ID column (GeneID, proteinID, etc.) must be moved to rownames. Also make sure the data is of type "numeric."')
+  }
+
+  if(any(is.na(a))){
+
+    print(paste(sum(is.na(a)), "missing value(s) replaced with zeros"))
+
+  } else {
+
+   print("Data has no missing values")
+
+  }
 
   if(any(is.na(a))){a[is.na(a)] <- 0}
 
-  CPMfilterFUN = enquo(CPMfilterFUN)
+  if(CPM == T) {cpm = a %>% edgeR::cpm() %>% as.data.frame()}
 
-  if(CPMfilter == T){
-    final = a %>%
-      edgeR::cpm() %>%
-      as.data.frame() %>%
-      mutate(!!CPMfilterFUN := apply(., 1, !!CPMfilterFUN)) %>%
-      arrange(desc(!!CPMfilterFUN)) %>%
-      filter(!!CPMfilterFUN >= CPMfilter.Threshold)
+  FilterFUN = enquo(FilterFUN)
 
-    if(nrow(a) <= Rank.Threshold) {print(paste("No features removed. Data only has", nrow(x), "features"))}
-
-    print(paste("Removed", (nrow(x)) - (nrow(final)), "features based on CPMfilter.Threshold threshold"))
-
-    return(final)
-
+  if(is.null(FilterThreshold) & is.null(RankThreshold) | !is.null(FilterThreshold) & !is.null(RankThreshold)) {
+    stop('Please provide EITHER FilterThreshold OR RankThreshold')
   }
 
-  if(IQRfilter %in% "IQR.Rank"){
+  if(!is.null(FilterThreshold)) {
 
-    final = a %>%
-      mutate(iqrs = apply(., 1, IQR)) %>%
-      arrange(desc(iqrs)) %>%
-      head(n = Rank.Threshold)
+    final = cpm %>%
+      mutate(!!FilterFUN := apply(., 1, !!FilterFUN)) %>%
+      filter(!!FilterFUN >= FilterThreshold)
 
-    if(nrow(a) <= Rank.Threshold) {print(paste("No features removed. Data only has", nrow(x), "features"))}
+    print(paste0("Removed ", (nrow(a)) - (nrow(final)), " features based on ", as_label(FilterFUN), " threshold of ", FilterThreshold, ', ', nrow(final), ' remaining'))
 
-    print(paste("Removed", (nrow(x)) - (nrow(final)), "features based on IQR rank threshold"))
 
-    Cleaned = list(dat = select(final, !iqrs), IQRs = final %>% select(iqrs))
+    a = a %>%
+      tibble::rownames_to_column(var = 'ID') %>%
+      filter(ID %in% rownames(final)) %>%
+      tibble::column_to_rownames(var = 'ID')
 
-    return(Cleaned)
+    return(a)
 
-  }
+  } else {
 
-  if(IQRfilter %in% "IQR"){
+    if(!is.null(RankThreshold)) {
 
-    final = a %>%
-      mutate(iqrs = apply(., 1, IQR)) %>%
-      filter(iqrs >= iqr.threshold)
+      final = cpm %>%
+        mutate(!!FilterFUN := apply(., 1, !!FilterFUN)) %>%
+        arrange(desc(!!FilterFUN)) %>%
+        head(n = RankThreshold)
 
-    print(paste("Removed", (nrow(x)-1) - (nrow(final)-1), "features based on IQR threshold"))
+      print(paste0("Removed ", (nrow(a)) - (nrow(final)), " features based on ", as_label(FilterFUN), " rank threshold of ", RankThreshold, ', ', nrow(final), ' remaining'))
 
-    Cleaned = list(dat = select(final, !iqrs), IQRs = final %>% select(iqrs))
 
-    return(Cleaned)
+      a = a %>%
+        tibble::rownames_to_column(var = 'ID') %>%
+        filter(ID %in% rownames(final)) %>%
+        tibble::column_to_rownames(var = 'ID')
+
+      return(a)
+
+    }
+
   }
 
 }
 
-#' Takes an OmicsAnalyst formatted data.frame and converts it to long format for plotting descriptive statistics and individual features
-#' @param x a data.frame
-#' @export
 
-format_to_plot <- function(x){
-
-  a <- reshape2::melt(x[-1,-ncol(x)], id.vars = 1, variable.name = "Sample", value.name = "value")
-
-  a$Class = gsub("\\.\\d$", "", a$Sample)
-
-  a$value = as.numeric(a$value)
-
-  return(a)
-
-}
-
-
-#' Takes an OmicsAnalyst formatted data.frame and performs general logarithm transformation (glog) and/or stdandardization (autoscale) returning a normalized data.frame
-#' @param x a data.frame
-#' @param glog logical argument. If TRUE (T), data will be glog normalized. If FALSE (F), data will not be glog normalized
-#' @param autoscale logical argument. If TRUE (T), data will be autoscaled. If FALSE (F), data will not be autoscaled
-#' @export
-norm_Omics_df <- function(x, glog = T, autoscale = T){
-
-  rawT <- data.table::transpose(x, keep.names = , make.names = 1)
-
-  rawT[, c(2:ncol(rawT))] <- sapply(rawT[, c(2:ncol(rawT))], FUN = as.numeric)
-
-  if(glog %in% T){
-    rawT[, c(2:ncol(rawT))] <- sapply(rawT[, c(2:ncol(rawT))], FUN = FitAR::glog)
-  }
-
-  if(autoscale %in% T){
-    rawT[, c(2:ncol(rawT))] <- sapply(rawT[, c(2:ncol(rawT))], FUN = BBmisc::normalize, method = "standardize")
-  }
-
-  rawT[, c(2:ncol(rawT))] <- sapply(rawT[, c(2:ncol(rawT))], FUN = format, digits = 3, width = 3)
-
-  raw <- data.table::transpose(rawT, keep.names = "Gene.ID")
-
-  colnames(raw) = colnames(x)
-
-  return(raw)
-
-}
-
-#' Takes an OmicsAnalyst formatted data.frame and returns a data.frame prepared for PCA analysis
-#' @param x a data.frame
-#' @param legend.hjust adjusts horizontal justification of PCA plot legend
-#' @import stats
+#' Multiple options for plotting descriptive statistics from PCA. Takes a numeric data frame as input.
+#' @param dat A data.frame
+#' @param metadata Optional data frame with metadata for filling, coloring, or plotting PCA results against.
+#' @param join_by_name Name of column in metadata that matches rownames/colnames of data. Used to join metadata with data. This is usually sample names. For example, sample1.1, sample1.2, etc.
+#' @param plotting_factors_name Name for factor you want to plot. Is made by removing two characters from the end of 'join_by_name' variable. For example, sample1.1, sample1.2 and sample2.1, sample2.2 in this variable become sample1, sample1 and sample2, sample2. Used for coloring, filling, and grouping of plot. Default name is Group
+#' @param plotting_factors_in Location of plotting factors. Options are either 'col_names' or 'row_names'.
+#' @param x What do you want to plot on the x-axis? Default is 'PC1'
+#' @param y What do you want to plot on the y-axis? Default is 'PC2'
+#' @param scale Logical. Scale data? Default is TRUE
+#' @param center Logical. Center data? Default is TRUE
+#' @param color Which variable to color by? Default is 'Group'.
+#' @param fill Which variable to fill by? Default is 'Group'.
+#' @param plot_type One of three options: '2D', 'boxplot', or 'scatter'. Default is '2D'.
+#' @param summarise_for_scatter Logical. Plotting factors can sometimes contain psuedoreplication which inflates the p-value of this scatterplot. This option will summarize the plotting factors by mean, removing psuedoreplication for a more realistic p-value. Default is TRUE.
+#' @import dplyr
+#' @import tibble
+#' @import ggpubr
 #' @import ggplot2
-#' @import grDevices
-#' @import viridis
+#' @importFrom dplyr filter
+#' @importFrom rlang :=
+#' @importFrom stats prcomp reorder
+#' @importFrom utils head
 #' @export
-PCA_Omics <- function(x, legend.hjust = 0.84){
-  Group <- PC1 <- PC2 <- NULL
-  forPCA <- data.table::transpose(x, keep.names = , make.names = 1)
+plot_pca = function(dat, metadata = NULL, join_by_name = 'Sample', plotting_factors_name = Group, plotting_factors_in = 'col_names', x = 'PC1', y = 'PC2', scale = T, center = T, color = 'Group', fill = 'Group', plot_type = '2D', summarise_for_scatter = T) {
 
-  forPCA[2:ncol(forPCA)] <- sapply(forPCA[2:ncol(forPCA)], as.numeric)
+  . <- ID <- Group <- NULL
 
-  rownames(forPCA) <- colnames(x)[-1]
 
-  PCA <- prcomp(forPCA[2:ncol(forPCA)], center = F, scale. = F)
+  message('Make sure no numeric identifiers are in data as this will drastically impact PCA')
 
-  pca <- as.data.frame(PCA$x)
+  if(any(sapply(dat, is.character)) == T) {
+    stop('Characters detected in at least one column. Only numeric values allowed. The ID column (GeneID, proteinID, etc.) must be moved to rownames. Also make sure the data is of type "numeric."')
+  }
 
-  proportion <- round((PCA$sdev^2)/ sum(PCA$sdev^2) * 100, 2)
+  plotting_factors_name = enquo(plotting_factors_name)
 
-  label <- paste(colnames(pca)[1:13], "(", as.character(proportion), "%)", sep = "")
+  # join_by_name = enquo(join_by_name)
 
-  pca$Group = as.factor(gsub("\\.\\d$", "", rownames(pca)))
+  if(plotting_factors_in == 'col_names') {
+    dat = t(dat) %>%
+      as.data.frame() %>%
+      mutate(across(everything(), as.numeric)) %>%
+      scale(scale = scale, center = center) %>%
+      as.matrix()
+  } else {
+    dat = dat %>%
+      as.data.frame() %>%
+      column_to_rownames(var = Group) %>%
+      select_if(is.character) %>%
+      mutate(across(everything(), as.numeric)) %>%
+      scale(scale = scale, center = center) %>%
+      as.matrix()
+  }
 
-  print(summary(PCA))
+  dat = prcomp(dat, scale = F, center = F)
 
-  tiff("PCA.tiff", 8.5, 8.5, units = "cm", compression = "lzw", res = 800)
-  g <- ggplot2::ggplot(pca, aes(x = PC1, y = PC2, fill = Group))+
-    scale_fill_viridis(begin = 0.2, discrete = T)+
-    scale_color_viridis(begin = 0.2, discrete = T)+
-    geom_point(aes(fill = Group), size = 1, shape = 21, colour = "black")+
-    stat_ellipse(geom = "polygon", alpha = 0.25, level = 0.95)+
-    theme_bw()+
-    theme(text = element_text(size = 7), legend.title = element_blank(), legend.text = element_text(size = 6), legend.key.size = unit(0.4,"cm"), legend.position = c(legend.hjust, 0.9), legend.background = element_rect(linetype = "solid", colour = "black", size = 0.3), legend.margin = margin(r=1, l=1,t=-2,b=1))+
-    labs(x = label[1], y = label[2])
-  print(g)
-  dev.off()
+  scores = dat$x
 
-  print(g)
+  eigs = dat$sdev^2
+
+  var_exp = paste('(', formatC((eigs/sum(eigs))*100, format = 'f', digits = 2), '%', ')', sep = '')
+
+  names(var_exp) = colnames(scores)
+
+  if(is.null(metadata)){
+
+    plot_dat = scores %>%
+      data.frame() %>%
+      rownames_to_column(var = join_by_name) %>%
+      mutate(!!plotting_factors_name := gsub('..$', '', get(join_by_name)))
+
+
+  } else {
+
+    plot_dat = scores %>%
+      data.frame() %>%
+      rownames_to_column(var = join_by_name) %>%
+      mutate(!!plotting_factors_name := gsub('..$', '', get(join_by_name))) %>%
+      left_join(metadata)
+
+  }
+
+
+
+  if(plot_type == '2D') {
+    p = ggplot(plot_dat, aes(get(x), get(y), color = get(color), group = !!plotting_factors_name, fill = get(fill)))+
+      geom_point()+
+      stat_ellipse(geom = 'polygon', alpha = 0.5, level = 0.65)+
+      # ggforce::geom_mark_ellipse(aes(fill = get(fill), label = !!plotting_factors_name))+
+      geom_text(aes(label = !!plotting_factors_name), color = 'black', size = 2.5)+
+      labs(x = paste(x, var_exp[x]), y = paste(y, var_exp[y]), fill = color, color = color)
+    return(p)
+  }
+
+  if(plot_type == 'boxplot') {
+
+    p = ggplot(plot_dat, aes(reorder(!!plotting_factors_name, get(x)), get(x), fill = get(fill)))+
+      geom_boxplot()+
+      labs(x = color, y = paste(x, var_exp[x]), fill = color)
+
+    return(p)
+  }
+
+  if(plot_type == 'scatter') {
+    if(summarise_for_scatter == T) {
+
+      plot_dat = plot_dat %>%
+        group_by(!!plotting_factors_name) %>%
+        summarise_if(is.numeric, mean)
+
+      ggscatter(plot_dat, x = x, y = y, add = 'reg.line', color = color)+
+        stat_cor(label.x = 0, label.y = max(plot_dat[y])*1.1)+
+        stat_smooth(method = 'lm')+
+        labs(x = paste(x, var_exp[x]))
+
+    } else {
+      ggscatter(plot_dat, x = x, y = y, add = 'reg.line', color = color)+
+        stat_cor(label.x = 0, label.y = max(plot_dat[y])*1.1)+
+        stat_smooth(method = 'lm')+
+        labs(x = paste(x, var_exp[x]))
+    }
+
+  }
+
 }
 
 
