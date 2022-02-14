@@ -10,13 +10,21 @@
 #' @importFrom stats prcomp reorder
 #' @importFrom utils head
 #' @export
-expression_filter <- function(dat, CPM = TRUE, FilterFUN = mean, FilterThreshold = NULL, RankThreshold = NULL){
+expression_filter <- function(dat, DGElist = FALSE, CPM = TRUE, FilterFUN = mean, FilterThreshold = NULL, RankThreshold = NULL){
 
   message('Make sure no numeric identifiers are in data as this will negatively impact filtering')
 
   iqrs <- . <- ID <- Group <- NULL
 
-  a <- as.data.frame(dat)
+  if(DGElist == T) {
+
+    a = data.frame(dat$counts)
+
+  } else {
+
+    a <- data.frame(dat)
+
+  }
 
   if(any(sapply(a, is.character)) == T) {
     stop('Characters detected in at least one column. Only numeric values allowed. The ID column (GeneID, proteinID, etc.) must be moved to rownames. Also make sure the data is of type "numeric."')
@@ -34,7 +42,17 @@ expression_filter <- function(dat, CPM = TRUE, FilterFUN = mean, FilterThreshold
 
   if(any(is.na(a))){a[is.na(a)] <- 0}
 
-  if(CPM == T) {cpm = a %>% edgeR::cpm() %>% as.data.frame()}
+  if(DGElist == T) {
+
+    cpm = dat %>% edgeR::cpm() %>% data.frame()
+
+  } else {
+
+    if(CPM == T) {cpm = a %>% edgeR::cpm() %>% data.frame()}
+
+  }
+
+
 
   FilterFUN = enquo(FilterFUN)
 
@@ -56,7 +74,19 @@ expression_filter <- function(dat, CPM = TRUE, FilterFUN = mean, FilterThreshold
       filter(ID %in% rownames(final)) %>%
       tibble::column_to_rownames(var = 'ID')
 
-    return(a)
+    if(DGElist == T) {
+
+      dat$counts = as.matrix(a)
+
+      return(dat)
+
+    } else {
+
+      return(a)
+
+    }
+
+
 
   } else {
 
@@ -75,7 +105,17 @@ expression_filter <- function(dat, CPM = TRUE, FilterFUN = mean, FilterThreshold
         filter(ID %in% rownames(final)) %>%
         tibble::column_to_rownames(var = 'ID')
 
-      return(a)
+      if(DGElist == T) {
+
+        dat$counts = as.matrix(a)
+
+        return(dat)
+
+      } else {
+
+        return(a)
+
+      }
 
     }
 
