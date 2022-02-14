@@ -222,7 +222,7 @@ plot_pca = function(dat, metadata = NULL, join_by_name = 'Sample', plotting_fact
 
     p = ggplot(plot_dat, aes(reorder(get(x), get(y)), get(y), fill = get(fill)))+
       geom_boxplot()+
-      labs(x = plotting_factors_name, y = paste(y, var_exp[y]), fill = get(fill))
+      labs(x = plotting_factors_name, y = paste(y, var_exp[y]), fill = fill)
 
     return(p)
   }
