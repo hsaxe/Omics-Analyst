@@ -10,13 +10,13 @@
 #' @importFrom stats prcomp reorder
 #' @importFrom utils head
 #' @export
-expression_filter <- function(dat, DGElist = FALSE, CPM = TRUE, FilterFUN = mean, FilterThreshold = NULL, RankThreshold = NULL){
+expression_filter <- function(dat, DGEList = FALSE, CPM = TRUE, FilterFUN = mean, FilterThreshold = NULL, RankThreshold = NULL){
 
   message('Make sure no numeric identifiers are in data as this will negatively impact filtering')
 
   iqrs <- . <- ID <- Group <- NULL
 
-  if(DGElist == T) {
+  if(DGEList == T) {
 
     a = data.frame(dat$counts)
 
@@ -42,7 +42,7 @@ expression_filter <- function(dat, DGElist = FALSE, CPM = TRUE, FilterFUN = mean
 
   if(any(is.na(a))){a[is.na(a)] <- 0}
 
-  if(DGElist == T) {
+  if(DGEList == T) {
 
     cpm = dat %>% edgeR::cpm() %>% data.frame()
 
@@ -74,7 +74,7 @@ expression_filter <- function(dat, DGElist = FALSE, CPM = TRUE, FilterFUN = mean
       filter(ID %in% rownames(final)) %>%
       tibble::column_to_rownames(var = 'ID')
 
-    if(DGElist == T) {
+    if(DGEList == T) {
 
       dat$counts = as.matrix(a)
 
@@ -105,7 +105,7 @@ expression_filter <- function(dat, DGElist = FALSE, CPM = TRUE, FilterFUN = mean
         filter(ID %in% rownames(final)) %>%
         tibble::column_to_rownames(var = 'ID')
 
-      if(DGElist == T) {
+      if(DGEList == T) {
 
         dat$counts = as.matrix(a)
 
