@@ -18,11 +18,11 @@ expression_filter <- function(dat, DGEList = FALSE, CPM = TRUE, FilterFUN = mean
 
   if(DGEList == T) {
 
-    a = data.frame(dat$counts)
+    a = as.data.frame(dat$counts)
 
   } else {
 
-    a <- data.frame(dat)
+    a <- as.data.frame(dat)
 
   }
 
@@ -44,11 +44,11 @@ expression_filter <- function(dat, DGEList = FALSE, CPM = TRUE, FilterFUN = mean
 
   if(DGEList == T) {
 
-    cpm = dat %>% edgeR::cpm() %>% data.frame()
+    cpm = dat %>% edgeR::cpm() %>% as.data.frame()
 
   } else {
 
-    if(CPM == T) {cpm = a %>% edgeR::cpm() %>% data.frame()}
+    if(CPM == T) {cpm = a %>% edgeR::cpm() %>% as.data.frame()}
 
   }
 
@@ -220,9 +220,9 @@ plot_pca = function(dat, metadata = NULL, join_by_name = 'Sample', plotting_fact
 
   if(plot_type == 'boxplot') {
 
-    p = ggplot(plot_dat, aes(reorder(!!plotting_factors_name, get(x)), get(x), fill = get(fill)))+
+    p = ggplot(plot_dat, aes(reorder(get(x), get(y)), get(y), fill = get(fill)))+
       geom_boxplot()+
-      labs(x = color, y = paste(x, var_exp[x]), fill = color)
+      labs(x = plotting_factors_name, y = paste(y, var_exp[y]), fill = get(fill))
 
     return(p)
   }
