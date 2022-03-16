@@ -188,12 +188,16 @@ plot_pca = function(dat, metadata = NULL, join_by_name = 'Sample', plotting_fact
 
   names(var_exp) = colnames(scores)
 
+  plot_list = list(plot_dat = NULL, plot = NULL)
+
   if(is.null(metadata)){
 
     plot_dat = scores %>%
       data.frame() %>%
       rownames_to_column(var = join_by_name) %>%
       mutate(!!plotting_factors_name := gsub('..$', '', get(join_by_name)))
+
+    plot_list$plot_dat <- plot_dat
 
 
   } else {
@@ -202,20 +206,25 @@ plot_pca = function(dat, metadata = NULL, join_by_name = 'Sample', plotting_fact
       data.frame() %>%
       rownames_to_column(var = join_by_name) %>%
       mutate(!!plotting_factors_name := gsub('..$', '', get(join_by_name))) %>%
-      left_join(metadata)
+      left_join(metadata, by = join_by_name)
+
+    plot_list$plot_dat <- plot_dat
 
   }
 
 
 
   if(plot_type == '2D') {
-    p = ggplot(plot_dat, aes(get(x), get(y), color = get(color), group = !!plotting_factors_name, fill = get(fill)))+
+    p = ggplot(plot_dat, aes(get(x), get(y), color = get(color), group = get(fill), fill = get(fill)))+
       geom_point()+
       stat_ellipse(geom = 'polygon', alpha = 0.5, level = 0.65)+
       # ggforce::geom_mark_ellipse(aes(fill = get(fill), label = !!plotting_factors_name))+
       geom_text(aes(label = !!plotting_factors_name), color = 'black', size = 2.5)+
       labs(x = paste(x, var_exp[x]), y = paste(y, var_exp[y]), fill = color, color = color)
-    return(p)
+
+    plot_list$plot <- p
+
+    return(plot_list)
   }
 
   if(plot_type == 'boxplot') {
