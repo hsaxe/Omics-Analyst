@@ -230,29 +230,41 @@ plot_pca = function(dat, metadata = NULL, join_by_name = 'Sample', plotting_fact
   if(plot_type == 'boxplot') {
 
     p = ggplot(plot_dat, aes(reorder(get(x), get(y)), get(y), fill = get(fill)))+
-      geom_boxplot()+
-      labs(x = plotting_factors_name, y = paste(y, var_exp[y]), fill = fill)
+        geom_boxplot()+
+        labs(x = plotting_factors_name, y = paste(y, var_exp[y]), fill = fill)
 
-    return(p)
+    plot_list$plot <- p
+
+    return(plot_list)
   }
 
   if(plot_type == 'scatter') {
     if(summarise_for_scatter == T) {
 
-      plot_dat = plot_dat %>%
+      plot_dat = plot_list$plot_dat %>%
         group_by(!!plotting_factors_name) %>%
         summarise_if(is.numeric, mean)
 
-      ggscatter(plot_dat, x = x, y = y, add = 'reg.line', color = color)+
-        stat_cor(label.x = 0, label.y = max(plot_dat[y])*1.1)+
-        stat_smooth(method = 'lm')+
-        labs(x = paste(x, var_exp[x]))
+      plot_list$plot_dat <- plot_dat
+
+      p = ggscatter(plot_dat, x = x, y = y, add = 'reg.line', color = color)+
+          stat_cor(label.x = 0, label.y = max(plot_dat[y])*1.1)+
+          stat_smooth(method = 'lm')+
+          labs(x = paste(x, var_exp[x]))
+
+      plot_list$plot <- p
+
+      return(plot_list)
 
     } else {
-      ggscatter(plot_dat, x = x, y = y, add = 'reg.line', color = color)+
-        stat_cor(label.x = 0, label.y = max(plot_dat[y])*1.1)+
-        stat_smooth(method = 'lm')+
-        labs(x = paste(x, var_exp[x]))
+      p = ggscatter(plot_dat, x = x, y = y, add = 'reg.line', color = color)+
+          stat_cor(label.x = 0, label.y = max(plot_dat[y])*1.1)+
+          stat_smooth(method = 'lm')+
+          labs(x = paste(x, var_exp[x]))
+
+      plot_list$plot <- p
+
+      return(plot_list)
     }
 
   }
