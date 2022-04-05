@@ -247,8 +247,11 @@ plot_pca = function(dat, metadata = NULL, join_by_name = 'Sample', plotting_fact
 
       plot_list$plot_dat <- plot_dat
 
-      p = ggscatter(plot_dat, x = x, y = y, add = 'reg.line', color = color)+
-          stat_cor(label.x = 0, label.y = max(plot_dat[y])*1.1)+
+      p = ggscatter(plot_dat, x = x, y = y, add = 'reg.line', color = color,
+                    cor.coef = TRUE, # Add correlation coefficient. see ?stat_cor
+                    cor.coeff.args = list(method = "pearson", label.x = 0, label.y = max(plot_dat[y])*1.1),
+                    cor.coef.size = 5)+
+          # stat_cor(label.x = 0, label.y = max(plot_dat[y])*1.1)+
           stat_smooth(method = 'lm')+
           labs(x = paste(x, var_exp[x]))
 
