@@ -4,6 +4,7 @@
 #' @param FilterFUN Row-wise function to use for filtering (mean, max, median, IQR, etc..).
 #' @param FilterThreshold Threshold value. Features with FilterFUN output higher than this value will be kept.
 #' @param RankThreshold Threshold value. Features will be ranked with FilterFUN and the top n values provided by RankThreshold will be kept.
+#' @param DGEList Logical. Is input data a DGEList? If TRUE, input data is handled as a list with a data.matrix/frame in it and not a data.frame alone. Also, CPM normalization will be performed if DGEList is set to TRUE
 #' @import dplyr
 #' @importFrom dplyr filter
 #' @importFrom rlang :=

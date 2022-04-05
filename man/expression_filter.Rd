@@ -6,6 +6,7 @@
 \usage{
 expression_filter(
   dat,
+  DGEList = FALSE,
   CPM = TRUE,
   FilterFUN = mean,
   FilterThreshold = NULL,
@@ -14,6 +15,8 @@ expression_filter(
 }
 \arguments{
 \item{dat}{A data.frame}
+
+\item{DGEList}{Logical. Is input data a DGEList? If TRUE, input data is handled as a list with a data.matrix/frame in it and not a data.frame alone. Also, CPM normalization will be performed if DGEList is set to TRUE}
 
 \item{CPM}{Logical. Whether or not to normalize columns by CPM}
 
