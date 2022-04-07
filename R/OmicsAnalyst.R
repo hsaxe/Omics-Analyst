@@ -207,7 +207,7 @@ plot_pca = function(dat, metadata = NULL, join_by_name = 'Sample', plotting_fact
       data.frame() %>%
       rownames_to_column(var = join_by_name) %>%
       mutate(!!plotting_factors_name := gsub('..$', '', get(join_by_name))) %>%
-      left_join(metadata, by = join_by_name)
+      left_join(metadata)
 
     plot_list$plot_dat <- plot_dat
 
@@ -261,7 +261,7 @@ plot_pca = function(dat, metadata = NULL, join_by_name = 'Sample', plotting_fact
       return(plot_list)
 
     } else {
-      p = ggscatter(plot_dat, x = x, y = y, add = 'reg.line', color = color)+
+      p = ggscatter(plot_dat, x = x, y = y, add = 'reg.line', color = get(color))+
           stat_cor(label.x = 0, label.y = max(plot_dat[y])*1.1)+
           stat_smooth(method = 'lm')+
           labs(x = paste(x, var_exp[x]))
