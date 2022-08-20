@@ -207,7 +207,7 @@ plot_pca = function(dat, metadata = NULL, join_by_name = 'Sample', plotting_fact
       data.frame() %>%
       rownames_to_column(var = join_by_name) %>%
       mutate(!!plotting_factors_name := gsub('..$', '', get(join_by_name))) %>%
-      left_join(metadata)
+      left_join(metadata, by = join_by_name)
 
     plot_list$plot_dat <- plot_dat
 
@@ -220,7 +220,7 @@ plot_pca = function(dat, metadata = NULL, join_by_name = 'Sample', plotting_fact
       geom_point()+
       stat_ellipse(geom = 'polygon', alpha = 0.5, level = 0.65)+
       # ggforce::geom_mark_ellipse(aes(fill = get(fill), label = !!plotting_factors_name))+
-      geom_text(aes(label = !!plotting_factors_name), color = 'black', size = 2.5)+
+      geom_text(aes(label = get(join_by_name)), color = 'black', size = 2.5)+
       labs(x = paste(x, var_exp[x]), y = paste(y, var_exp[y]), fill = color, color = color)
 
     plot_list$plot <- p
@@ -231,8 +231,8 @@ plot_pca = function(dat, metadata = NULL, join_by_name = 'Sample', plotting_fact
   if(plot_type == 'boxplot') {
 
     p = ggplot(plot_dat, aes(reorder(get(x), get(y)), get(y), fill = get(fill)))+
-        geom_boxplot()+
-        labs(x = plotting_factors_name, y = paste(y, var_exp[y]), fill = fill)
+      geom_boxplot()+
+      labs(x = plotting_factors_name, y = paste(y, var_exp[y]), fill = fill)
 
     plot_list$plot <- p
 
@@ -252,9 +252,9 @@ plot_pca = function(dat, metadata = NULL, join_by_name = 'Sample', plotting_fact
                     cor.coef = TRUE, # Add correlation coefficient. see ?stat_cor
                     cor.coeff.args = list(method = "pearson", label.x = 0, label.y = max(plot_dat[y])*1.1),
                     cor.coef.size = 5)+
-          # stat_cor(label.x = 0, label.y = max(plot_dat[y])*1.1)+
-          stat_smooth(method = 'lm')+
-          labs(x = paste(x, var_exp[x]))
+        # stat_cor(label.x = 0, label.y = max(plot_dat[y])*1.1)+
+        stat_smooth(method = 'lm')+
+        labs(x = paste(x, var_exp[x]))
 
       plot_list$plot <- p
 
@@ -262,9 +262,9 @@ plot_pca = function(dat, metadata = NULL, join_by_name = 'Sample', plotting_fact
 
     } else {
       p = ggscatter(plot_dat, x = x, y = y, add = 'reg.line', color = get(color))+
-          stat_cor(label.x = 0, label.y = max(plot_dat[y])*1.1)+
-          stat_smooth(method = 'lm')+
-          labs(x = paste(x, var_exp[x]))
+        stat_cor(label.x = 0, label.y = max(plot_dat[y])*1.1)+
+        stat_smooth(method = 'lm')+
+        labs(x = paste(x, var_exp[x]))
 
       plot_list$plot <- p
 
