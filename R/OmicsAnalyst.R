@@ -148,7 +148,19 @@ expression_filter <- function(dat, DGEList = FALSE, CPM = TRUE, FilterFUN = mean
 #' @importFrom stats prcomp reorder
 #' @importFrom utils head
 #' @export
-plot_pca = function(dat, metadata = NULL, join_by_name = 'Sample', plotting_factors_name = Group, plotting_factors_in = 'col_names', x = 'PC1', y = 'PC2', scale = T, center = T, color = 'Group', fill = 'Group', plot_type = '2D', summarise_for_scatter = T) {
+plot_pca = function(dat,
+                    metadata = NULL,
+                    join_by_name = 'Sample',
+                    plotting_factors_name = Group,
+                    plotting_factors_in = 'col_names',
+                    x = 'PC1',
+                    y = 'PC2',
+                    scale = T,
+                    center = T,
+                    color = 'Group',
+                    fill = 'Group',
+                    plot_type = '2D',
+                    summarise_for_scatter = T) {
 
   . <- ID <- Group <- NULL
 
