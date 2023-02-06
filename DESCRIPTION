@@ -1,5 +1,5 @@
 Package: OmicsAnalyst
-Title: What the Package Does (One Line, Title Case)
+Title: Functions to facilitate the statistical analysis of omics data.
 Version: 0.0.0.9001
 Authors@R: 
     person(given = "Houston",
