@@ -139,6 +139,7 @@ expression_filter <- function(dat, DGEList = FALSE, CPM = TRUE, FilterFUN = mean
 #' @param fill Which variable to fill by? Default is 'Group'.
 #' @param plot_type One of three options: '2D', 'boxplot', or 'scatter'. Default is '2D'.
 #' @param summarise_for_scatter Logical. Plotting factors can sometimes contain psuedoreplication which inflates the p-value of this scatterplot. This option will summarize the plotting factors by mean, removing psuedoreplication for a more realistic p-value. Default is TRUE.
+#' @param sep Desired separator for sample names in data to match that of metadata
 #' @import dplyr
 #' @import tibble
 #' @import ggpubr
@@ -160,7 +161,8 @@ plot_pca = function(dat,
                     color = 'Group',
                     fill = 'Group',
                     plot_type = '2D',
-                    summarise_for_scatter = T) {
+                    summarise_for_scatter = T,
+                    sep = '-') {
 
   . <- ID <- Group <- NULL
 
@@ -207,7 +209,10 @@ plot_pca = function(dat,
 
     plot_dat = scores %>%
       data.frame() %>%
-      rownames_to_column(var = join_by_name) %>%
+      rownames_to_column(var = 'var') %>%
+      mutate(var = gsub('X', '', var) %>%
+               gsub('\\.|-', sep, .)) %>%
+      rename(!!join_by_name := var) %>%
       mutate(!!plotting_factors_name := gsub('..$', '', get(join_by_name)))
 
     plot_list$plot_dat <- plot_dat
@@ -217,9 +222,13 @@ plot_pca = function(dat,
 
     plot_dat = scores %>%
       data.frame() %>%
-      rownames_to_column(var = join_by_name) %>%
+      rownames_to_column(var = 'var') %>%
+      mutate(var = gsub('X', '', var) %>%
+                  gsub('\\.|-', sep, .)) %>%
+      rename(!!join_by_name := var) %>%
       mutate(!!plotting_factors_name := gsub('..$', '', get(join_by_name))) %>%
       left_join(metadata, by = join_by_name)
+      # left_join(metadata)
 
     plot_list$plot_dat <- plot_dat
 
