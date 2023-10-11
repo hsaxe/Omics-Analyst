@@ -5,13 +5,20 @@
 #' @param FilterThreshold Threshold value. Features with FilterFUN output higher than this value will be kept.
 #' @param RankThreshold Threshold value. Features will be ranked with FilterFUN and the top n values provided by RankThreshold will be kept.
 #' @param DGEList Logical. Is input data a DGEList? If TRUE, input data is handled as a list with a data.matrix/frame in it and not a data.frame alone. Also, CPM normalization will be performed if DGEList is set to TRUE
+#' @param CPH Logical. If very low expression/mapped reads in experiment you may want to normalize by hundreds rather than millions as CPM will inflate very low count numbers.
 #' @import dplyr
 #' @importFrom dplyr filter
 #' @importFrom rlang :=
 #' @importFrom stats prcomp reorder
 #' @importFrom utils head
 #' @export
-expression_filter <- function(dat, DGEList = FALSE, CPM = TRUE, FilterFUN = mean, FilterThreshold = NULL, RankThreshold = NULL){
+expression_filter <- function(dat,
+                              DGEList = FALSE,
+                              CPM = TRUE,
+                              CPH = FALSE,
+                              FilterFUN = mean,
+                              FilterThreshold = NULL,
+                              RankThreshold = NULL){
 
   message('Make sure no numeric identifiers are in data as this will negatively impact filtering')
 
@@ -43,15 +50,30 @@ expression_filter <- function(dat, DGEList = FALSE, CPM = TRUE, FilterFUN = mean
 
   if(any(is.na(a))){a[is.na(a)] <- 0}
 
-  if(DGEList == T) {
+  if(CPH == T) {
 
-    cpm = dat %>% edgeR::cpm() %>% as.data.frame()
+    cpm = a %>%
+      # column_to_rownames('GeneID') %>%
+      apply(2, FUN = function(x){
+        x/(sum(x)/100)
+      }) %>%
+      as.data.frame()
 
   } else {
 
-    if(CPM == T) {cpm = a %>% edgeR::cpm() %>% as.data.frame()}
+    if(DGEList == T) {
+
+      cpm = dat %>% edgeR::cpm() %>% as.data.frame()
+
+    } else {
+
+      if(CPM == T) {cpm = a %>% edgeR::cpm() %>% as.data.frame()}
+
+    }
 
   }
+
+
 
 
 
@@ -66,6 +88,10 @@ expression_filter <- function(dat, DGEList = FALSE, CPM = TRUE, FilterFUN = mean
     final = cpm %>%
       mutate(!!FilterFUN := apply(., 1, !!FilterFUN)) %>%
       filter(!!FilterFUN >= FilterThreshold)
+
+    filter = list(final = final)
+
+    dat = append(dat, filter)
 
     print(paste0("Removed ", (nrow(a)) - (nrow(final)), " features based on ", as_label(FilterFUN), " threshold of ", FilterThreshold, ', ', nrow(final), ' remaining'))
 
@@ -97,6 +123,10 @@ expression_filter <- function(dat, DGEList = FALSE, CPM = TRUE, FilterFUN = mean
         mutate(!!FilterFUN := apply(., 1, !!FilterFUN)) %>%
         arrange(desc(!!FilterFUN)) %>%
         head(n = RankThreshold)
+
+      filter = list(final = final)
+
+      dat = append(dat, filter)
 
       print(paste0("Removed ", (nrow(a)) - (nrow(final)), " features based on ", as_label(FilterFUN), " rank threshold of ", RankThreshold, ', ', nrow(final), ' remaining'))
 
