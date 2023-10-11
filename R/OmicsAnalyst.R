@@ -1,11 +1,11 @@
-#' Takes a data.frame, replaces any missing value(s) with zeros, optionally performs counts per million (CPM) normalization, calculates the row-wise statistic provided by FilterFun, and filters the data with above the FilterThreshold or keeps only the top n provided by RankThreshold. The raw data is returned (not CPM normalized).
+#' Takes a data.frame, replaces any missing value(s) with zeros, optionally performs counts per million (CPM) normalization, calculates the row-wise statistic provided by FilterFun, and filters the data with above the FilterThreshold or keeps only the top n provided by RankThreshold. Also, the output of expression filter is a two element list. 'final' is a data frame showing the filtered and if specified, transformed, data and a column with whatever statistic the user specified to filter it by. This is to visualize what features had what filter/rank statistic. 'dat' is the raw data (not CPM normalized). If specified, 'dat' will be a DGEList.
 #' @param dat A data.frame
 #' @param CPM Logical. Whether or not to normalize columns by CPM
 #' @param FilterFUN Row-wise function to use for filtering (mean, max, median, IQR, etc..).
 #' @param FilterThreshold Threshold value. Features with FilterFUN output higher than this value will be kept.
 #' @param RankThreshold Threshold value. Features will be ranked with FilterFUN and the top n values provided by RankThreshold will be kept.
 #' @param DGEList Logical. Is input data a DGEList? If TRUE, input data is handled as a list with a data.matrix/frame in it and not a data.frame alone. Also, CPM normalization will be performed if DGEList is set to TRUE
-#' @param CPH Logical. If very low expression/mapped reads in experiment you may want to normalize by hundreds rather than millions as CPM will inflate very low count numbers.
+#' @param CPH Logical. If there are very few mapped reads, your depth may not be in millions, but in hundreds or thousands. Therefore CPM normalization will skew expression very high. CPH normalization, or normalizing by hundreds factor, may provide better results.
 #' @import dplyr
 #' @importFrom dplyr filter
 #' @importFrom rlang :=
@@ -91,7 +91,7 @@ expression_filter <- function(dat,
 
     filter = list(final = final)
 
-    dat = append(dat, filter)
+    # dat = append(dat, filter)
 
     print(paste0("Removed ", (nrow(a)) - (nrow(final)), " features based on ", as_label(FilterFUN), " threshold of ", FilterThreshold, ', ', nrow(final), ' remaining'))
 
@@ -124,9 +124,10 @@ expression_filter <- function(dat,
         arrange(desc(!!FilterFUN)) %>%
         head(n = RankThreshold)
 
-      filter = list(final = final)
+      filtered = list(final = final,
+                      dat = dat)
 
-      dat = append(dat, filter)
+      # dat = append(dat, filter)
 
       print(paste0("Removed ", (nrow(a)) - (nrow(final)), " features based on ", as_label(FilterFUN), " rank threshold of ", RankThreshold, ', ', nrow(final), ' remaining'))
 
@@ -138,9 +139,9 @@ expression_filter <- function(dat,
 
       if(DGEList == T) {
 
-        dat$counts = as.matrix(a)
+        filtered$dat$counts = as.matrix(a)
 
-        return(dat)
+        return(filtered)
 
       } else {
 
