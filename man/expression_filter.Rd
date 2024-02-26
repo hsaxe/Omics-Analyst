@@ -2,12 +2,13 @@
 % Please edit documentation in R/OmicsAnalyst.R
 \name{expression_filter}
 \alias{expression_filter}
-\title{Takes a data.frame, replaces any missing value(s) with zeros, optionally performs counts per million (CPM) normalization, calculates the row-wise statistic provided by FilterFun, and filters the data with above the FilterThreshold or keeps only the top n provided by RankThreshold. The raw data is returned (not CPM normalized).}
+\title{Takes a data.frame, replaces any missing value(s) with zeros, optionally performs counts per million (CPM) normalization, calculates the row-wise statistic provided by FilterFun, and filters the data with above the FilterThreshold or keeps only the top n provided by RankThreshold. Also, the output of expression filter is a two element list. 'final' is a data frame showing the filtered and if specified, transformed, data and a column with whatever statistic the user specified to filter it by. This is to visualize what features had what filter/rank statistic. 'dat' is the raw data (not CPM normalized). If specified, 'dat' will be a DGEList.}
 \usage{
 expression_filter(
   dat,
   DGEList = FALSE,
   CPM = TRUE,
+  CPH = FALSE,
   FilterFUN = mean,
   FilterThreshold = NULL,
   RankThreshold = NULL
@@ -20,6 +21,8 @@ expression_filter(
 
 \item{CPM}{Logical. Whether or not to normalize columns by CPM}
 
+\item{CPH}{Logical. If there are very few mapped reads, your depth may not be in millions, but in hundreds or thousands. Therefore CPM normalization will skew expression very high. CPH normalization, or normalizing by hundreds factor, may provide better results.}
+
 \item{FilterFUN}{Row-wise function to use for filtering (mean, max, median, IQR, etc..).}
 
 \item{FilterThreshold}{Threshold value. Features with FilterFUN output higher than this value will be kept.}
@@ -27,5 +30,5 @@ expression_filter(
 \item{RankThreshold}{Threshold value. Features will be ranked with FilterFUN and the top n values provided by RankThreshold will be kept.}
 }
 \description{
-Takes a data.frame, replaces any missing value(s) with zeros, optionally performs counts per million (CPM) normalization, calculates the row-wise statistic provided by FilterFun, and filters the data with above the FilterThreshold or keeps only the top n provided by RankThreshold. The raw data is returned (not CPM normalized).
+Takes a data.frame, replaces any missing value(s) with zeros, optionally performs counts per million (CPM) normalization, calculates the row-wise statistic provided by FilterFun, and filters the data with above the FilterThreshold or keeps only the top n provided by RankThreshold. Also, the output of expression filter is a two element list. 'final' is a data frame showing the filtered and if specified, transformed, data and a column with whatever statistic the user specified to filter it by. This is to visualize what features had what filter/rank statistic. 'dat' is the raw data (not CPM normalized). If specified, 'dat' will be a DGEList.
 }
