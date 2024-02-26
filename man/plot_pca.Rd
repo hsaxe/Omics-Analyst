@@ -17,7 +17,9 @@ plot_pca(
   color = "Group",
   fill = "Group",
   plot_type = "2D",
-  summarise_for_scatter = T
+  points_label = "Group",
+  summarise_for_scatter = T,
+  sep = "-"
 )
 }
 \arguments{
@@ -45,7 +47,11 @@ plot_pca(
 
 \item{plot_type}{One of three options: '2D', 'boxplot', or 'scatter'. Default is '2D'.}
 
+\item{points_label}{Which variable to label points by? Default is 'Group".}
+
 \item{summarise_for_scatter}{Logical. Plotting factors can sometimes contain psuedoreplication which inflates the p-value of this scatterplot. This option will summarize the plotting factors by mean, removing psuedoreplication for a more realistic p-value. Default is TRUE.}
+
+\item{sep}{Desired separator for sample names in data to match that of metadata}
 }
 \description{
 Multiple options for plotting descriptive statistics from PCA. Takes a numeric data frame as input.
