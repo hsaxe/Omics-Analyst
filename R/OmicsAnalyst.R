@@ -170,7 +170,7 @@ expression_filter <- function(dat,
 #' @param fill Which variable to fill by? Default is 'Group'.
 #' @param plot_type One of three options: '2D', 'boxplot', or 'scatter'. Default is '2D'.
 #' @param summarise_for_scatter Logical. Plotting factors can sometimes contain psuedoreplication which inflates the p-value of this scatterplot. This option will summarize the plotting factors by mean, removing psuedoreplication for a more realistic p-value. Default is TRUE.
-#' @param points_label Which variable to label points by? Default is 'Group".
+#' @param points_label Which variable to label points by? Default is 'NULL' in which case no labeling will occur.
 #' @param sep Desired separator for sample names in data to match that of metadata
 #' @import dplyr
 #' @import tibble
@@ -193,7 +193,7 @@ plot_pca = function(dat,
                     color = 'Group',
                     fill = 'Group',
                     plot_type = '2D',
-                    points_label = 'Group',
+                    points_label = NULL,
                     summarise_for_scatter = T,
                     sep = '-') {
 
@@ -270,6 +270,19 @@ plot_pca = function(dat,
 
 
   if(plot_type == '2D') {
+    if(is.null(points_label)) {
+
+      p = ggplot(plot_dat, aes(get(x), get(y), color = get(color), group = get(fill), fill = get(fill)))+
+        geom_point()+
+        stat_ellipse(geom = 'polygon', alpha = 0.5, level = 0.65)+
+        # ggforce::geom_mark_ellipse(aes(fill = get(fill), label = !!plotting_factors_name))+
+        labs(x = paste(x, var_exp[x]), y = paste(y, var_exp[y]), fill = color, color = color)
+
+      plot_list$plot <- p
+
+      return(plot_list)
+
+    } else {
 
       p = ggplot(plot_dat, aes(get(x), get(y), color = get(color), group = get(fill), fill = get(fill)))+
         geom_point()+
@@ -282,6 +295,7 @@ plot_pca = function(dat,
 
       return(plot_list)
 
+    }
 
   }
 
