@@ -184,7 +184,7 @@ expression_filter <- function(dat,
 plot_pca = function(dat,
                     metadata = NULL,
                     join_by_name = 'Sample',
-                    plotting_factors_name = Group,
+                    plotting_factors_name = 'Group',
                     plotting_factors_in = 'col_names',
                     x = 'PC1',
                     y = 'PC2',
@@ -218,15 +218,18 @@ plot_pca = function(dat,
       as.matrix()
   } else {
     dat = dat %>%
-      as.data.frame() %>%
-      column_to_rownames(var = Group) %>%
-      select_if(is.character) %>%
+      # as.data.frame() %>%
+      column_to_rownames(var = rlang::quo_name(plotting_factors_name)) %>%
+      # select_if(is.character) %>%
       mutate(across(everything(), as.numeric)) %>%
       scale(scale = scale, center = center) %>%
       as.matrix()
   }
 
+
   dat = prcomp(dat, scale = F, center = F)
+
+  loadings = dat$rotation
 
   scores = dat$x
 
@@ -236,7 +239,21 @@ plot_pca = function(dat,
 
   names(var_exp) = colnames(scores)
 
-  plot_list = list(plot_dat = NULL, plot = NULL)
+  plot_list = list()
+
+  plot_list$loadings = loadings %>%
+    as.data.frame() %>%
+    # arrange(PC1) %>%
+    rownames_to_column(var = 'Variable')
+
+  plot_list$var_exp = var_exp
+
+  plot_list$loadings_plot = ggplot(plot_list$loadings,
+                                   aes(PC1, PC2, color = Variable))+
+    geom_point()+
+    geom_label_repel(aes(label = Variable))+
+    ggtitle('Loadings')+
+    theme(plot.title = element_text(hjust = 0.5))
 
   if(is.null(metadata)){
 
@@ -246,7 +263,7 @@ plot_pca = function(dat,
       mutate(var = gsub('X', '', var) %>%
                gsub('\\.|-', sep, .)) %>%
       rename(!!join_by_name := var) %>%
-      mutate(!!plotting_factors_name := gsub('..$', '', get(join_by_name)))
+      mutate(!!plotting_factors_name := gsub('\\.\\d+$', '', get(join_by_name)))
 
     plot_list$plot_dat <- plot_dat
 
@@ -259,7 +276,7 @@ plot_pca = function(dat,
       mutate(var = gsub('X', '', var) %>%
                   gsub('\\.|-', sep, .)) %>%
       rename(!!join_by_name := var) %>%
-      mutate(!!plotting_factors_name := gsub('..$', '', get(join_by_name))) %>%
+      mutate(!!plotting_factors_name := gsub('\\.\\d+$', '', get(join_by_name))) %>%
       left_join(metadata, by = join_by_name)
       # left_join(metadata)
 
@@ -278,7 +295,7 @@ plot_pca = function(dat,
         # ggforce::geom_mark_ellipse(aes(fill = get(fill), label = !!plotting_factors_name))+
         labs(x = paste(x, var_exp[x]), y = paste(y, var_exp[y]), fill = color, color = color)
 
-      plot_list$plot <- p
+      plot_list$scores_plot <- p
 
       return(plot_list)
 
@@ -291,7 +308,7 @@ plot_pca = function(dat,
         geom_text(aes(label = get(points_label)), color = 'black', size = 2.5)+
         labs(x = paste(x, var_exp[x]), y = paste(y, var_exp[y]), fill = color, color = color)
 
-      plot_list$plot <- p
+      plot_list$scores_plot <- p
 
       return(plot_list)
 
@@ -305,7 +322,7 @@ plot_pca = function(dat,
       geom_boxplot()+
       labs(x = plotting_factors_name, y = paste(y, var_exp[y]), fill = fill)
 
-    plot_list$plot <- p
+    plot_list$scores_boxplot <- p
 
     return(plot_list)
   }
@@ -327,7 +344,7 @@ plot_pca = function(dat,
         stat_smooth(method = 'lm')+
         labs(x = paste(x, var_exp[x]))
 
-      plot_list$plot <- p
+      plot_list$scatter_plot <- p
 
       return(plot_list)
 
@@ -337,7 +354,7 @@ plot_pca = function(dat,
         stat_smooth(method = 'lm')+
         labs(x = paste(x, var_exp[x]))
 
-      plot_list$plot <- p
+      plot_list$scatter_plot <- p
 
       return(plot_list)
     }
